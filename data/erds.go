@@ -44,11 +44,6 @@ func GetERDs() ERDs {
 	return erds
 }
 
-/*
-func LoadERDs(path string) {
-	return
-}
-*/
 func (e *ERDs) ToJSON(w io.Writer) error {
 	enc := json.NewEncoder(w)
 	return enc.Encode(e)

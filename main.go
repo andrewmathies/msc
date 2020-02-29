@@ -13,10 +13,10 @@ import (
 
 func main() {
 	l := log.New(os.Stdout, "erd-api", log.LstdFlags)
-	ph := handlers.NewERDs(l)
+	erdHandler := handlers.NewERDs(l)
 
 	mux := http.NewServeMux()
-	mux.Handle("/", ph)
+	mux.Handle("/", erdHandler)
 
 	server := &http.Server{
 		Addr:         ":9090",
