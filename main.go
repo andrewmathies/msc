@@ -12,8 +12,8 @@ import (
 )
 
 func main() {
-	l := log.New(os.Stdout, "product-api", log.LstdFlags)
-	ph := handlers.NewProducts(l)
+	l := log.New(os.Stdout, "erd-api", log.LstdFlags)
+	ph := handlers.NewERDs(l)
 
 	mux := http.NewServeMux()
 	mux.Handle("/", ph)
