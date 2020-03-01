@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/andrewmathies/msl/handlers"
+	"github.com/gorilla/mux"
 )
 
 //var bindAddress = env.String("BIND_ADDRESS", false, ":9090", "Bind address for the server")
@@ -16,16 +17,26 @@ import (
 func main() {
 	//env.Parse()
 
-	l := log.New(os.Stdout, "erd-api", log.LstdFlags)
+	l := log.New(os.Stdout, "erd-api ", log.LstdFlags)
 
-	// building the handler
+	// building the handlers
 	erdHandler := handlers.NewERDs(l)
 
 	// create a serve multiplexer and register handlers
-	mux := http.NewServeMux()
-	mux.Handle("/", erdHandler)
+	mux := mux.NewRouter()
 
-	// build server with specific parameters. These can be tuned depending on usage of service.
+	getRouter := mux.Methods(http.MethodGet).Subrouter()
+	putRouter := mux.Methods(http.MethodPut).Subrouter()
+	postRouter := mux.Methods(http.MethodPost).Subrouter()
+
+	putRouter.Use(erdHandler.MiddlewareValidateERD)
+	postRouter.Use(erdHandler.MiddlewareValidateERD)
+
+	getRouter.HandleFunc("/erds", erdHandler.GetERDs)
+	putRouter.HandleFunc("/erds/{id:[0-9]+}", erdHandler.UpdateERD)
+	postRouter.HandleFunc("/erds", erdHandler.AddERD)
+
+	// create server with specific parameters. These should be tuned depending on usage of service.
 	// i.e. whether this service is client facing or used by other services
 	server := &http.Server{
 		Addr:         ":9090",
