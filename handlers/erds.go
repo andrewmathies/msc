@@ -2,13 +2,13 @@ package handlers
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net/http"
 	"strconv"
 
-	"github.com/gorilla/mux"
-
 	"github.com/andrewmathies/msl/data"
+	"github.com/gorilla/mux"
 )
 
 type ERDs struct {
@@ -78,9 +78,20 @@ func (e ERDs) MiddlewareValidateERD(next http.Handler) http.Handler {
 			return
 		}
 
+		// validate the erd
+		err = erd.Validate()
+
+		if err != nil {
+			e.logger.Println("ERROR validating product", err)
+			http.Error(rw, fmt.Sprintf("Invalid request data: %s", err), http.StatusBadRequest)
+			return
+		}
+
+		// add the erd to the context
 		ctx := context.WithValue(r.Context(), KeyERD{}, erd)
 		r = r.WithContext(ctx)
 
+		// call the next handler. could be another middleware or the final handler
 		next.ServeHTTP(rw, r)
 	})
 }
