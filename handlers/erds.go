@@ -1,3 +1,17 @@
+// Package classification ERD API
+//
+// Documentation for ERD API
+//
+// 	Schemes: http
+// 	BasePath: /
+// 	Version: 0.0.1
+//
+// 	Consumes:
+// 	- application/json
+//
+// 	Produces:
+// 	- application/json
+// swagger:meta
 package handlers
 
 import (
@@ -5,11 +19,29 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"strconv"
 
 	"github.com/andrewmathies/msl/data"
-	"github.com/gorilla/mux"
 )
+
+// A list of ERDs in the response
+// swagger:response erdsResponse
+type erdsResponse struct {
+	// All erds in the system
+	// in:body
+	Body []data.ERD
+}
+
+// swagger:response noContent
+type erdsNoContent struct {
+}
+
+// swagger:parameters deleteERD
+type erdIDParameterWrapper struct {
+	// The id of the ERD to remove from the data store
+	// in: path
+	// required: true
+	ID int `json:"id"`
+}
 
 type ERDs struct {
 	logger *log.Logger
@@ -19,52 +51,6 @@ type KeyERD struct{}
 
 func NewERDs(l *log.Logger) *ERDs {
 	return &ERDs{l}
-}
-
-func (e *ERDs) GetERDs(rw http.ResponseWriter, r *http.Request) {
-	e.logger.Println("Handle GET ERDs")
-
-	erds := data.GetERDs()
-	err := erds.ToJSON(rw)
-
-	if err != nil {
-		e.logger.Println(err)
-		http.Error(rw, "Unable to marshal json", http.StatusInternalServerError)
-	}
-}
-
-func (e *ERDs) AddERD(rw http.ResponseWriter, r *http.Request) {
-	e.logger.Println("Handle POST ERD")
-
-	erd := r.Context().Value(KeyERD{}).(data.ERD)
-
-	e.logger.Printf("ERD: %#v", erd)
-	data.AddERD(&erd)
-}
-
-func (e *ERDs) UpdateERD(rw http.ResponseWriter, r *http.Request) {
-	e.logger.Println("Handle PUT ERD")
-
-	vars := mux.Vars(r)
-	id, err := strconv.Atoi(vars["id"])
-
-	if err != nil {
-		e.logger.Println(err)
-		http.Error(rw, "Unable to convert id", http.StatusBadRequest)
-	}
-
-	erd := r.Context().Value(KeyERD{}).(data.ERD)
-
-	e.logger.Printf("ERD: %#v", erd)
-	err = data.UpdateERD(id, &erd)
-
-	if err == data.ErrERDNotFound {
-		http.Error(rw, "ERD not found", http.StatusNotFound)
-		return
-	} else if err != nil {
-		http.Error(rw, "Unable to update ERD", http.StatusInternalServerError)
-		return
-	}
 }
 
 func (e ERDs) MiddlewareValidateERD(next http.Handler) http.Handler {

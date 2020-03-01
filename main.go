@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/andrewmathies/msl/handlers"
+	"github.com/go-openapi/runtime/middleware"
 	"github.com/gorilla/mux"
 )
 
@@ -28,13 +29,22 @@ func main() {
 	getRouter := mux.Methods(http.MethodGet).Subrouter()
 	putRouter := mux.Methods(http.MethodPut).Subrouter()
 	postRouter := mux.Methods(http.MethodPost).Subrouter()
+	deleteRouter := mux.Methods(http.MethodDelete).Subrouter()
 
 	putRouter.Use(erdHandler.MiddlewareValidateERD)
 	postRouter.Use(erdHandler.MiddlewareValidateERD)
 
 	getRouter.HandleFunc("/erds", erdHandler.GetERDs)
-	putRouter.HandleFunc("/erds/{id:[0-9]+}", erdHandler.UpdateERD)
 	postRouter.HandleFunc("/erds", erdHandler.AddERD)
+	putRouter.HandleFunc("/erds/{id:[0-9]+}", erdHandler.UpdateERD)
+	deleteRouter.HandleFunc("/erds/{id:[0-9]+}", erdHandler.DeleteERD)
+
+	// display swagger documentation in a neat way
+	opts := middleware.RedocOpts{SpecURL: "/swagger.yaml"}
+	docHandler := middleware.Redoc(opts, nil)
+
+	getRouter.Handle("/docs", docHandler)
+	getRouter.Handle("/swagger.yaml", http.FileServer(http.Dir("./")))
 
 	// create server with specific parameters. These should be tuned depending on usage of service.
 	// i.e. whether this service is client facing or used by other services

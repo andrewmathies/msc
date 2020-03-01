@@ -10,11 +10,31 @@ import (
 	"github.com/go-playground/validator/v10"
 )
 
+// ERD defines the structure of an API ERD
+// swagger:model
 type ERD struct {
-	ID        int      `json:"id"`
-	Name      string   `json:"name" validate:"required"`
-	Address   string   `json:"address" validate:"required"`
-	Fields    []string `json:"fields" validate:"gt=0,dive,required,validerdfield=Name"`
+	// the id for this ERD
+	//
+	// required: false
+	// min: 0
+	ID int `json:"id"`
+
+	// the name of this ERD
+	//
+	// required: true
+	Name string `json:"name" validate:"required"`
+
+	// the address of this ERD as a hex string
+	//
+	// required: true
+	Address string `json:"address" validate:"required"`
+
+	// the fields an ERD response will contain. each must contain the ERD name either as the entire field name or as a prefix
+	//
+	// required: true
+	Fields []string `json:"fields" validate:"gt=0,dive,required,validerdfield=Name"`
+
+	// the actions a user can perform with this ERD. will be a subset of: [read, write, publish, subscribe]
 	Actions   []string `json:"actions"`
 	CreatedOn string   `json:"-"`
 	UpdatedOn string   `json:"-"`
@@ -72,6 +92,18 @@ func UpdateERD(id int, erd *ERD) error {
 
 	erd.ID = id
 	erds[i] = erd
+
+	return nil
+}
+
+func DeleteERD(id int) error {
+	_, i, err := findERD(id)
+
+	if err != nil {
+		return err
+	}
+
+	erds = append(erds[:i], erds[:i+1]...)
 
 	return nil
 }
