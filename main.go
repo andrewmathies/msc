@@ -9,15 +9,45 @@ import (
 	"time"
 
 	"github.com/andrewmathies/msl/handlers"
+	"github.com/go-openapi/runtime/middleware"
+	"github.com/gorilla/mux"
 )
 
+//var bindAddress = env.String("BIND_ADDRESS", false, ":9090", "Bind address for the server")
+
 func main() {
-	l := log.New(os.Stdout, "product-api", log.LstdFlags)
-	ph := handlers.NewProducts(l)
+	//env.Parse()
 
-	mux := http.NewServeMux()
-	mux.Handle("/", ph)
+	l := log.New(os.Stdout, "erd-api ", log.LstdFlags)
 
+	// building the handlers
+	erdHandler := handlers.NewERDs(l)
+
+	// create a serve multiplexer and register handlers
+	mux := mux.NewRouter()
+
+	getRouter := mux.Methods(http.MethodGet).Subrouter()
+	putRouter := mux.Methods(http.MethodPut).Subrouter()
+	postRouter := mux.Methods(http.MethodPost).Subrouter()
+	deleteRouter := mux.Methods(http.MethodDelete).Subrouter()
+
+	putRouter.Use(erdHandler.MiddlewareValidateERD)
+	postRouter.Use(erdHandler.MiddlewareValidateERD)
+
+	getRouter.HandleFunc("/erds", erdHandler.GetERDs)
+	postRouter.HandleFunc("/erds", erdHandler.AddERD)
+	putRouter.HandleFunc("/erds/{id:[0-9]+}", erdHandler.UpdateERD)
+	deleteRouter.HandleFunc("/erds/{id:[0-9]+}", erdHandler.DeleteERD)
+
+	// display swagger documentation in a neat way
+	opts := middleware.RedocOpts{SpecURL: "/swagger.yaml"}
+	docHandler := middleware.Redoc(opts, nil)
+
+	getRouter.Handle("/docs", docHandler)
+	getRouter.Handle("/swagger.yaml", http.FileServer(http.Dir("./")))
+
+	// create server with specific parameters. These should be tuned depending on usage of service.
+	// i.e. whether this service is client facing or used by other services
 	server := &http.Server{
 		Addr:         ":9090",
 		Handler:      mux,
@@ -38,6 +68,7 @@ func main() {
 	signal.Notify(sigChan, os.Interrupt)
 	signal.Notify(sigChan, os.Kill)
 
+	l.Println("started listening on ", server.Addr)
 	sig := <-sigChan
 	l.Println("Recieved terminate, graceful shutdown", sig)
 
